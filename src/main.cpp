@@ -9,13 +9,18 @@ int main()
 {
     //inicializar color gris
     Color grey = {29, 29,27,255};
+    Color yellow = {243, 216, 63, 255};
     
 
     //dimensiones de la ven5tana
+    int offset = 50;
     int windowHeigth = 750;
     int windowWidth = 700;
 
-    InitWindow(windowWidth, windowHeigth, "Galaga by cocas galacticas");
+    InitWindow(windowWidth + offset, windowHeigth + 2*offset , "Galaga by cocas galacticas");
+
+    Font font = LoadFontEx("Font/monogram.ttf", 64, 0,0);
+    Texture2D Spaceshipimage = LoadTexture("Graphics/spaceship.png");
 
     GameScreen currentScreen = MENU;
 
@@ -56,11 +61,19 @@ int main()
                 game.Update();
                 BeginDrawing();
                 ClearBackground(grey);
+                DrawRectangleRoundedLines({10,10,730,830}, 0.18f, 20, 2, yellow);
+                DrawLineEx({10,780}, {735, 780}, 3, yellow);
+                game.run ? DrawTextEx(font, "LEVEL 01", {570, 790}, 34,2, yellow) : DrawTextEx(font, "GAME OVER", {570, 790}, 34,2, yellow);
+                float x = 50.0;
+                for(int i=0; i<game.lives; i++){
+                    DrawTextureV(Spaceshipimage, {x,790}, WHITE);
+                    x+=50;
+                }
                 game.Draw();
             } break;
             case OPTIONS: {
                 // Lógica de configuraciones aquí (placeholder)
-                if (IsKeyPressed(KEY_ESCAPE)) currentScreen = MENU;
+                if (IsKeyPressed(KEY_COMMA)) currentScreen = MENU;
             } break;
         }
 
@@ -94,7 +107,6 @@ int main()
 
     return 0;
 }
-
 
 
 

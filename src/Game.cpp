@@ -9,6 +9,11 @@ Game::Game(){
     timeLastAlienFired = 0.0;
     timeLastSpawn = 0.0;
     mysteryShipSpawnInterval = GetRandomValue(10, 20);
+    kleft = false;
+    kright = false;
+    lives = 3;
+    run = true;
+    InitGame();
 }
 
 Game::~Game(){
@@ -16,30 +21,34 @@ Game::~Game(){
 }
 
 void Game::Update(){
+    if(run){
+        double currentTime = GetTime();
+        if(currentTime - timeLastSpawn > mysteryShipSpawnInterval){
+            mysteryship.Spawn();
+            timeLastSpawn = GetTime();
+            mysteryShipSpawnInterval = GetRandomValue(10, 20);
+        }
 
-    double currentTime = GetTime();
-    if(currentTime - timeLastSpawn > mysteryShipSpawnInterval){
-        mysteryship.Spawn();
-        timeLastSpawn = GetTime();
-        mysteryShipSpawnInterval = GetRandomValue(10, 20);
+
+
+        for(auto& laser: player1.lasers){
+            laser.Update();
+        }
+
+        MoveAliens();
+        AlienShootLaser();
+        for(auto& laser: alienLasers){
+            laser.Update();
+        }
+
+        mysteryship.Update();
+        CheckForColision(); 
+
+        DeleteInactiveLasers();
+    }else if(IsKeyDown(KEY_ENTER)){
+        Reset();
+        InitGame();
     }
-
-
-
-    for(auto& laser: player1.lasers){
-        laser.Update();
-    }
-
-    MoveAliens();
-    AlienShootLaser();
-    for(auto& laser: alienLasers){
-        laser.Update();
-    }
-
-    mysteryship.Update();
-    CheckForColision(); 
-
-    DeleteInactiveLasers();
 }
 
 void Game::Draw(){
@@ -65,12 +74,32 @@ void Game::Draw(){
 }
 
 void Game::HandleInput(){
-    if(IsKeyDown(KEY_LEFT)){
-        player1.MoveLeft();
-    }else if(IsKeyDown(KEY_RIGHT)){
-        player1.MoveRigth();
-    }else if(IsKeyDown(KEY_SPACE)){
-        player1.ShotBullets();
+    if(run){
+        if(IsKeyDown(KEY_LEFT)) {
+        kleft = true;
+        } 
+
+        if(IsKeyUp(KEY_LEFT)) {
+            kleft = false;
+        }
+
+        if(IsKeyDown(KEY_RIGHT)) {
+            kright = true;
+        } 
+
+        if(IsKeyUp(KEY_RIGHT)) {
+            kright = false;
+        }
+
+        if(kleft) {
+            player1.MoveLeft();
+        }
+        if(kright) {
+            player1.MoveRigth();
+        }
+        if(IsKeyDown(KEY_SPACE)) {
+            player1.ShotBullets();
+        }
     }
 }
 
@@ -100,7 +129,7 @@ std::vector<Obstacle> Game::CreateObstacles()
 
     for(int i = 0; i<4; i++){
         float offsetX= (i+1) * gap+i * obstacleWidth;
-        obstacles.push_back(Obstacle({offsetX, float(GetScreenWidth()-100)}));
+        obstacles.push_back(Obstacle({offsetX, float(GetScreenWidth()-200)}));
     }
     return obstacles;
 }
@@ -129,10 +158,10 @@ std::vector<Alien> Game::CreateAliens()
 
 void Game::MoveAliens(){
     for(auto& alien: aliens){
-        if(alien.position.x + alien.alienImages[alien.type-1].width > GetScreenWidth()){
+        if(alien.position.x + alien.alienImages[alien.type-1].width > GetScreenWidth()-25){
             AliensDirection = -1;
             MoveDownAliens(4);
-        }else if(alien.position.x < 0){
+        }else if(alien.position.x < 25){
             AliensDirection = 1;
             MoveDownAliens(4);
         }
@@ -207,7 +236,10 @@ void Game::CheckForColision()
     for(auto& laser: alienLasers){
         if(CheckCollisionRecs(laser.getRect(), player1.getRect())){
             laser.active = false;
-            std::cout << "Spaceship hit" << std::endl;
+            lives--;
+            if(lives==0){
+                GameOver();
+            }
         }
 
         for(auto& obstacle: obstacles){
@@ -224,4 +256,49 @@ void Game::CheckForColision()
         }
 
     }
+
+    //alien collisio with obstacle
+
+    for(auto& alien: aliens){
+        for(auto& obstacle: obstacles){
+            auto it = obstacle.blocks.begin();
+            while(it != obstacle.blocks.end()){
+                if(CheckCollisionRecs(it -> getRect(), alien.getRect())){
+                    it = obstacle.blocks.erase(it);
+                }else{
+                    it++;
+                }
+            }
+        }
+        if(CheckCollisionRecs(alien.getRect(), player1.getRect())){
+            GameOver();
+
+        }
+    }
+}
+
+void Game::GameOver()
+{
+    run = false;
+}
+
+void Game::InitGame()
+{
+    obstacles = CreateObstacles();
+    aliens = CreateAliens();
+    AliensDirection = 1;
+    timeLastAlienFired = 0.0;
+    timeLastSpawn = 0.0;
+    mysteryShipSpawnInterval = GetRandomValue(10, 20);
+    kleft = false;
+    kright = false;
+    lives = 3;
+    run = true;
+}
+
+void Game::Reset(){
+    player1.Reset();
+    aliens.clear();
+    alienLasers.clear();
+    obstacles.clear();
 }

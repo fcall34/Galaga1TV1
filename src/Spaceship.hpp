@@ -6,6 +6,7 @@
 
 class Spaceship{
     public:
+        int speed;
         Spaceship();
         ~Spaceship();
 
@@ -14,6 +15,9 @@ class Spaceship{
         void MoveRigth();
         void ShotBullets();
         Rectangle getRect();
+        void Reset();
+        int getPosX();
+        int getPosY();
 
         std::vector<Laser> lasers;
     private:
