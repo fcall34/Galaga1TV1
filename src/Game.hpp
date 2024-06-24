@@ -12,8 +12,18 @@ class Game{
     void Draw();
     void Update();
     void HandleInput();
-    bool run;
+    void Difficulty(int diff);
+    void Pause();
+    bool run = true;
+    bool pause = false;
     int lives;
+    int score;
+    int highscore;
+    int difficulty;
+    
+
+    Music music;
+
 
     private:
         void DeleteInactiveLasers();
@@ -26,16 +36,20 @@ class Game{
         void GameOver();
         void Reset();
         void InitGame();
+        void checkForScore();
+        void SaveHighScore(int highscore);
+        int loadHighScoreFromFile();  
         Spaceship player1;
         std::vector<Obstacle> obstacles;
         std::vector<Alien> aliens;
         int AliensDirection;
         std::vector<Laser> alienLasers;
-        constexpr static float alienLaserShootInterval = 0.35;
+        float alienLaserShootInterval;
         float timeLastAlienFired;
         Mysteryship mysteryship;
         float mysteryShipSpawnInterval;
         float timeLastSpawn;
         bool kleft, kright;
+        Sound explosionSound;
         
 };

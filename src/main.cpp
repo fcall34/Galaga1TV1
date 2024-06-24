@@ -1,9 +1,19 @@
 #include <raylib.h>
 #include "Game.hpp"
+#include <string>
+#include <iostream>
+
+std::string formatWithZeros(int number, int width){
+    std::string numberText = std::to_string(number);
+    int leadingZeros =width-numberText.length();
+    return numberText = std::string(leadingZeros, '0')+numberText;
+
+
+}
 
 
 // Estados del juego
-enum GameScreen { MENU, GAME, OPTIONS };
+enum GameScreen { MENU, GAME, OPTIONS, PAUSE};
 
 int main()
 {
@@ -18,6 +28,7 @@ int main()
     int windowWidth = 700;
 
     InitWindow(windowWidth + offset, windowHeigth + 2*offset , "Galaga by cocas galacticas");
+    InitAudioDevice();
 
     Font font = LoadFontEx("Font/monogram.ttf", 64, 0,0);
     Texture2D Spaceshipimage = LoadTexture("Graphics/spaceship.png");
@@ -26,8 +37,14 @@ int main()
 
     // Variables para el menú
     int selectedOption = 0;
+    int selectedDifficulty =0;
+    int selectedPause = 0;
     const char *menuOptions[] = { "Iniciar partida", "Configuraciones", "Salir" };
+    const char *difficultyOptions[] = {"Facil", "Media", "Dificil", "Infierno"};
+    const char *pauseOptions[] = {"Reanudar", "Cambiar Dificultad", "Finalizar juego"};
+    const int pauseCount = sizeof(pauseOptions) / sizeof(pauseOptions[0]);
     const int optionsCount = sizeof(menuOptions) / sizeof(menuOptions[0]);
+    const int difficultyCount = sizeof(difficultyOptions)/ sizeof(difficultyOptions[0]);
 
     Game game;
 
@@ -57,8 +74,17 @@ int main()
 
             case GAME: {
                 // Lógica del juego aquí (placeholder)
-                game.HandleInput();
-                game.Update();
+
+                if (IsKeyPressed(KEY_TAB)) {
+                    game.pause = !game.pause;
+                    currentScreen = game.pause ? PAUSE : GAME;
+                }
+
+                if (!game.pause) {
+                    UpdateMusicStream(game.music);
+                    game.HandleInput();
+                    game.Update();
+                }
                 BeginDrawing();
                 ClearBackground(grey);
                 DrawRectangleRoundedLines({10,10,730,830}, 0.18f, 20, 2, yellow);
@@ -69,11 +95,39 @@ int main()
                     DrawTextureV(Spaceshipimage, {x,790}, WHITE);
                     x+=50;
                 }
+                if(IsKeyPressed(KEY_COMMA)){
+                    currentScreen = MENU;
+                }
                 game.Draw();
             } break;
             case OPTIONS: {
-                // Lógica de configuraciones aquí (placeholder)
-                if (IsKeyPressed(KEY_COMMA)) currentScreen = MENU;
+                // Navegar por las opciones del menú
+                if (IsKeyPressed(KEY_DOWN)) selectedDifficulty++;
+                if (IsKeyPressed(KEY_UP)) selectedDifficulty--;
+
+                if (selectedDifficulty < 0) selectedDifficulty = difficultyCount - 1;
+                if (selectedDifficulty >= difficultyCount) selectedDifficulty = 0;
+
+                if (IsKeyPressed(KEY_ENTER)) {
+                    game.Difficulty(selectedDifficulty);
+                    
+                    currentScreen = MENU;
+                }
+                if(IsKeyPressed(KEY_COMMA)){
+                    currentScreen = MENU;
+                }
+            } break;
+            case PAUSE: {
+                if (IsKeyPressed(KEY_TAB)) {
+                    game.pause = !game.pause;
+                    currentScreen = game.pause ? PAUSE : GAME;
+                }
+                if (IsKeyPressed(KEY_DOWN)) selectedPause++;
+                if (IsKeyPressed(KEY_UP)) selectedPause--;
+
+                if (selectedPause < 0) selectedPause = pauseCount - 1;
+                if (selectedPause >= pauseCount) selectedPause = 0;
+            
             } break;
         }
 
@@ -91,19 +145,29 @@ int main()
             } break;
 
             case GAME: {
-                DrawText("Score: ", 100 - MeasureText("Score:", 20) / 2, 50, 20, WHITE);
+                DrawTextEx(font, "SCORE: ", {50, 15}, 34, 2, yellow);
+                std::string scoreText = formatWithZeros(game.score, 5);
+                DrawTextEx(font, scoreText.c_str(), {50, 40}, 34, 2, yellow);
+
+                DrawTextEx(font, "HIGH SCORE", {570, 15}, 34, 2, yellow);
+                std::string highscoreText = formatWithZeros(game.highscore, 5);
+                DrawTextEx(font, highscoreText.c_str(), {655, 40}, 34, 2, yellow);
             } break;
 
             case OPTIONS: {
-                DrawText("Options Screen", windowWidth / 2 - MeasureText("Options Screen", 20) / 2, windowHeigth / 2 - 10, 20, WHITE);
-                DrawText("Press ESC to go back to Menu", windowWidth / 2 - MeasureText("Press ESC to go back to Menu", 20) / 2, windowHeigth / 2 + 20, 20, GRAY);
-            } break;
+            DrawText("Seleccionar Dificultad", windowWidth / 2 - MeasureText("Seleccionar Dificultad", 40) / 2, 100, 40, WHITE);
+            for (int i = 0; i < difficultyCount; i++) {
+                Color color = (i == selectedDifficulty) ? RED : WHITE;
+                DrawText(difficultyOptions[i], windowWidth / 2 - MeasureText(difficultyOptions[i], 20) / 2, 300 + 40 * i, 20, color);
+            }
+        } break;
         }
 
         EndDrawing();
     }
 
     CloseWindow();
+    CloseAudioDevice();
 
     return 0;
 }

@@ -1,23 +1,18 @@
 #include "Game.hpp"
 #include <iostream>
-
+#include <fstream>
 
 Game::Game(){
-    obstacles = CreateObstacles();
-    aliens = CreateAliens();
-    AliensDirection = 1;
-    timeLastAlienFired = 0.0;
-    timeLastSpawn = 0.0;
-    mysteryShipSpawnInterval = GetRandomValue(10, 20);
-    kleft = false;
-    kright = false;
-    lives = 3;
-    run = true;
+    music = LoadMusicStream("Sounds/music.ogg");
+    explosionSound = LoadSound("Sounds/explosion.ogg");
+    PlayMusicStream(music);
     InitGame();
 }
 
 Game::~Game(){
     Alien::UnloadImages();
+    UnloadMusicStream(music);
+    UnloadSound(explosionSound);
 }
 
 void Game::Update(){
@@ -100,6 +95,31 @@ void Game::HandleInput(){
         if(IsKeyDown(KEY_SPACE)) {
             player1.ShotBullets();
         }
+        if(IsKeyDown(KEY_FIVE)){
+            GameOver();
+        }
+    }
+}
+
+void Game::Difficulty(int diff) {
+    difficulty = diff;
+    switch (difficulty) {
+        case 0:  // Facil
+            alienLaserShootInterval = 1.0f;
+            mysteryShipSpawnInterval = GetRandomValue(20, 30);
+            break;
+        case 1:  // Media
+            alienLaserShootInterval = 0.75f;
+            mysteryShipSpawnInterval = GetRandomValue(15, 25);
+            break;
+        case 2:  // Dificil
+            alienLaserShootInterval = 0.35f;
+            mysteryShipSpawnInterval = GetRandomValue(10, 20);
+            break;
+        case 3:  // Infierno
+            alienLaserShootInterval = 0.10f;
+            mysteryShipSpawnInterval = GetRandomValue(5, 10);
+            break;
     }
 }
 
@@ -197,6 +217,15 @@ void Game::CheckForColision()
         auto it = aliens.begin();
         while(it != aliens.end()){
             if(CheckCollisionRecs(it -> getRect(), laser.getRect())){
+                PlaySound(explosionSound);
+                if(it -> type ==1){
+                    score += 100;
+                }else if(it -> type == 2){
+                    score += 200;
+                }else if(it -> type ==3){
+                    score += 300;
+                }
+                checkForScore();
                 it = aliens.erase(it);
                 laser.active=false;
             }else{
@@ -227,6 +256,9 @@ void Game::CheckForColision()
     if(CheckCollisionRecs(mysteryship.getRect(), laser.getRect())){
         mysteryship.alive = false;
         laser.active =false;
+        score += 500;
+        checkForScore();
+        PlaySound(explosionSound);
     }
 
     }
@@ -279,6 +311,7 @@ void Game::CheckForColision()
 
 void Game::GameOver()
 {
+    
     run = false;
 }
 
@@ -289,11 +322,48 @@ void Game::InitGame()
     AliensDirection = 1;
     timeLastAlienFired = 0.0;
     timeLastSpawn = 0.0;
-    mysteryShipSpawnInterval = GetRandomValue(10, 20);
+    Difficulty(difficulty);
     kleft = false;
     kright = false;
     lives = 3;
     run = true;
+    score = 0;
+    highscore = loadHighScoreFromFile();
+
+}
+
+void Game::checkForScore()
+{
+    if(score > highscore){
+        highscore = score;
+        SaveHighScore(highscore);
+    }
+}
+
+void Game::SaveHighScore(int highscore)
+{
+    std::ofstream highscoreFile("highscore.txt");
+    if(highscoreFile.is_open()){
+        highscoreFile << highscore;
+        highscoreFile.close();
+    }else{
+        std::cout << "Failed to open file" << std::endl;
+    }
+
+}
+
+int Game::loadHighScoreFromFile()
+{
+    int loeadedHighScore =0;
+    std::ifstream highScoreFile("highscore.txt");
+    if(highScoreFile.is_open()){
+        highScoreFile >> loeadedHighScore;
+        highScoreFile.close();
+    }else{
+        std::cerr << "Failed to load highscore form file." << std::endl;
+    
+    }
+    return loeadedHighScore;
 }
 
 void Game::Reset(){
