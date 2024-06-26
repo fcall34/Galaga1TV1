@@ -13,9 +13,10 @@ class Game{
     void Update();
     void HandleInput();
     void Difficulty(int diff);
-    void Pause();
-    bool run = true;
-    bool pause = false;
+    void Reset();
+    bool run;
+    bool pause;
+    bool win;
     int lives;
     int score;
     int highscore;
@@ -27,17 +28,17 @@ class Game{
 
     private:
         void DeleteInactiveLasers();
-        std::vector<Obstacle> CreateObstacles();
         std::vector<Alien> CreateAliens();
+        std::vector<Obstacle> CreateObstacles();
         void MoveAliens();
         void MoveDownAliens(int distance);
         void AlienShootLaser();
         void CheckForColision();
         void GameOver();
-        void Reset();
         void InitGame();
         void checkForScore();
         void SaveHighScore(int highscore);
+        void Win();
         int loadHighScoreFromFile();  
         Spaceship player1;
         std::vector<Obstacle> obstacles;

@@ -1,41 +1,33 @@
-# Ignorar directorios de usuario
-/.arduinoIDE/
-/.bash_history
-/.config/
-/.console-ninja/
-/.editorconfig
-/.emulator_console_auth_token
-/.ganttproject
-/.gitattributes
-/.gitconfig
-/.gradle/
-/.idlerc/
-/.kivy/
-/.m2/
-/.nbi/
-/.redisinsight-v2/
-/.ssh/
-/.th-client/
-/.vscode/
-/3D Objects/
-/AppData/
-/Contacts/
-/Desktop/
-/Documents/
-/Downloads/
-/Favorites/
-/IntelGraphicsProfiles/
-/Links/
-/MicrosoftEdgeBackups/
-/Music/
-/NTUSER.DAT
-/NTUSER.DAT{d22897ec-7cee-11ee-a517-95154f2c7f53}.TM.blf
-/NTUSER.DAT{d22897ec-7cee-11ee-a517-95154f2c7f53}.TMContainer00000000000000000001.regtrans-ms
-/NTUSER.DAT{d22897ec-7cee-11ee-a517-95154f2c7f53}.TMContainer00000000000000000002.regtrans-ms
-/Saved Games/
-/Searches/
-/Videos/
-/ntuser.dat.LOG1
-/ntuser.dat.LOG2
-/ntuser.ini
+# Ignorar todos los archivos .exe en cualquier directorio
+*.exe
 
+# Otras reglas comunes para ignorar archivos
+# Archivos de configuración del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de compilación
+/build/
+/bin/
+/obj/
+
+# Archivos de log
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos generados por el IDE
+.idea/
+.vscode/
+
+# Ignorar todos los archivos binarios en cualquier directorio
+*.dll
+*.so
+*.dylib
+*.pdb
+*.idb
+
+# Archivos específicos de tu proyecto
+# Agrega aquí cualquier otro archivo o directorio específico que desees ignorar

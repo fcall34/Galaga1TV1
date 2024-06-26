@@ -40,9 +40,8 @@ void Game::Update(){
         CheckForColision(); 
 
         DeleteInactiveLasers();
-    }else if(IsKeyDown(KEY_ENTER)){
+    }else if(IsKeyPressed(KEY_ENTER)){
         Reset();
-        InitGame();
     }
 }
 
@@ -109,18 +108,20 @@ void Game::Difficulty(int diff) {
             mysteryShipSpawnInterval = GetRandomValue(20, 30);
             break;
         case 1:  // Media
-            alienLaserShootInterval = 0.75f;
+            alienLaserShootInterval = 0.50f;
             mysteryShipSpawnInterval = GetRandomValue(15, 25);
             break;
         case 2:  // Dificil
-            alienLaserShootInterval = 0.35f;
+            alienLaserShootInterval = 0.15f;
             mysteryShipSpawnInterval = GetRandomValue(10, 20);
             break;
         case 3:  // Infierno
-            alienLaserShootInterval = 0.10f;
+            alienLaserShootInterval = 0.0f;
             mysteryShipSpawnInterval = GetRandomValue(5, 10);
             break;
     }
+
+    obstacles = CreateObstacles();
 }
 
 void Game::DeleteInactiveLasers()
@@ -144,13 +145,35 @@ void Game::DeleteInactiveLasers()
 
 std::vector<Obstacle> Game::CreateObstacles()
 {
-    int obstacleWidth = Obstacle::grid[0].size() * 3;
-    float gap = (GetScreenWidth() - (4*obstacleWidth))/5;
+    obstacles.clear(); // Limpiar los obstáculos existentes
 
-    for(int i = 0; i<4; i++){
-        float offsetX= (i+1) * gap+i * obstacleWidth;
-        obstacles.push_back(Obstacle({offsetX, float(GetScreenWidth()-200)}));
+    int numObstacles = 0;
+    switch(difficulty) {
+        case 0:
+            numObstacles = 4;
+            break;
+        case 1:
+            numObstacles = 4;
+            break;
+        case 2:
+            numObstacles = 2;
+            break;
+        case 3: 
+            numObstacles = 1;
+            break;
+        default: 
+            numObstacles = 4;
+            break;
     }
+
+    int obstacleWidth = Obstacle::grid[0].size() * 3;
+    float gap = (GetScreenWidth() - (numObstacles * obstacleWidth)) / (numObstacles + 1);
+
+    for (int i = 0; i < numObstacles; i++) {
+        float offsetX = (i + 1) * gap + i * obstacleWidth;
+        obstacles.push_back(Obstacle({offsetX, float(GetScreenHeight() - 200)}));
+    }
+
     return obstacles;
 }
 
@@ -208,6 +231,13 @@ void Game::AlienShootLaser()
     }
 
 }
+void Game::Win()
+{
+    if(aliens.empty()){
+        win = true;
+        GameOver();
+    }
+}
 
 void Game::CheckForColision()
 {
@@ -227,6 +257,7 @@ void Game::CheckForColision()
                 }
                 checkForScore();
                 it = aliens.erase(it);
+                Win();
                 laser.active=false;
             }else{
                 ++it;
@@ -317,16 +348,17 @@ void Game::GameOver()
 
 void Game::InitGame()
 {
-    obstacles = CreateObstacles();
+    Difficulty(difficulty);
     aliens = CreateAliens();
     AliensDirection = 1;
     timeLastAlienFired = 0.0;
     timeLastSpawn = 0.0;
-    Difficulty(difficulty);
     kleft = false;
     kright = false;
     lives = 3;
     run = true;
+    pause = false;
+    win = false;
     score = 0;
     highscore = loadHighScoreFromFile();
 
@@ -371,4 +403,7 @@ void Game::Reset(){
     aliens.clear();
     alienLasers.clear();
     obstacles.clear();
+    pause=false;
+    InitGame();
 }
+

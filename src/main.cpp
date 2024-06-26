@@ -5,52 +5,46 @@
 
 std::string formatWithZeros(int number, int width){
     std::string numberText = std::to_string(number);
-    int leadingZeros =width-numberText.length();
-    return numberText = std::string(leadingZeros, '0')+numberText;
-
-
+    int leadingZeros = width - numberText.length();
+    return std::string(leadingZeros, '0') + numberText;
 }
 
-
 // Estados del juego
-enum GameScreen { MENU, GAME, OPTIONS, PAUSE};
+enum GameScreen { MENU, GAME, OPTIONS, PAUSE };
 
 int main()
 {
-    //inicializar color gris
-    Color grey = {29, 29,27,255};
+    // Inicializar color gris
+    Color grey = {29, 29, 27, 255};
     Color yellow = {243, 216, 63, 255};
-    
 
-    //dimensiones de la ven5tana
+    // Dimensiones de la ventana
     int offset = 50;
     int windowHeigth = 750;
     int windowWidth = 700;
 
-    InitWindow(windowWidth + offset, windowHeigth + 2*offset , "Galaga by cocas galacticas");
+    InitWindow(windowWidth + offset, windowHeigth + 2 * offset, "Galaga by cocas galacticas");
     InitAudioDevice();
 
-    Font font = LoadFontEx("Font/monogram.ttf", 64, 0,0);
+    Font font = LoadFontEx("Font/monogram.ttf", 64, 0, 0);
     Texture2D Spaceshipimage = LoadTexture("Graphics/spaceship.png");
 
     GameScreen currentScreen = MENU;
 
     // Variables para el menú
     int selectedOption = 0;
-    int selectedDifficulty =0;
+    int selectedDifficulty = 0;
     int selectedPause = 0;
     const char *menuOptions[] = { "Iniciar partida", "Configuraciones", "Salir" };
-    const char *difficultyOptions[] = {"Facil", "Media", "Dificil", "Infierno"};
-    const char *pauseOptions[] = {"Reanudar", "Cambiar Dificultad", "Finalizar juego"};
+    const char *difficultyOptions[] = { "Facil", "Media", "Dificil", "Infierno" };
+    const char *pauseOptions[] = { "Reanudar", "Cambiar Dificultad", "Finalizar juego" };
     const int pauseCount = sizeof(pauseOptions) / sizeof(pauseOptions[0]);
     const int optionsCount = sizeof(menuOptions) / sizeof(menuOptions[0]);
-    const int difficultyCount = sizeof(difficultyOptions)/ sizeof(difficultyOptions[0]);
+    const int difficultyCount = sizeof(difficultyOptions) / sizeof(difficultyOptions[0]);
 
     Game game;
 
     SetTargetFPS(30);
-
-    
 
     while (!WindowShouldClose()) {
         // Manejo de la lógica del menú
@@ -87,19 +81,26 @@ int main()
                 }
                 BeginDrawing();
                 ClearBackground(grey);
-                DrawRectangleRoundedLines({10,10,730,830}, 0.18f, 20, 2, yellow);
-                DrawLineEx({10,780}, {735, 780}, 3, yellow);
-                game.run ? DrawTextEx(font, "LEVEL 01", {570, 790}, 34,2, yellow) : DrawTextEx(font, "GAME OVER", {570, 790}, 34,2, yellow);
-                float x = 50.0;
-                for(int i=0; i<game.lives; i++){
-                    DrawTextureV(Spaceshipimage, {x,790}, WHITE);
-                    x+=50;
+                DrawRectangleRoundedLines({10, 10, 730, 830}, 0.18f, 20, 2, yellow);
+                DrawLineEx({10, 780}, {735, 780}, 3, yellow);
+                if(game.win){
+                    DrawTextEx(font, "You win", {400, 790}, 34, 2, yellow);
+                }else if(!game.run){
+                    DrawTextEx(font, "Game Over, Press enter to restar", {100, 790}, 34, 2, yellow);
+                }else{
+                    DrawTextEx(font, "Shoot the aliens", {400, 790}, 34, 2, yellow);
                 }
-                if(IsKeyPressed(KEY_COMMA)){
+                float x = 50.0;
+                for (int i = 0; i < game.lives; i++) {
+                    DrawTextureV(Spaceshipimage, {x, 790}, WHITE);
+                    x += 50;
+                }
+                if (IsKeyPressed(KEY_COMMA)) {
                     currentScreen = MENU;
                 }
                 game.Draw();
             } break;
+
             case OPTIONS: {
                 // Navegar por las opciones del menú
                 if (IsKeyPressed(KEY_DOWN)) selectedDifficulty++;
@@ -109,25 +110,43 @@ int main()
                 if (selectedDifficulty >= difficultyCount) selectedDifficulty = 0;
 
                 if (IsKeyPressed(KEY_ENTER)) {
+                    game.difficulty = selectedDifficulty;
                     game.Difficulty(selectedDifficulty);
-                    
                     currentScreen = MENU;
                 }
-                if(IsKeyPressed(KEY_COMMA)){
+                if (IsKeyPressed(KEY_COMMA)) {
                     currentScreen = MENU;
                 }
             } break;
+
             case PAUSE: {
                 if (IsKeyPressed(KEY_TAB)) {
                     game.pause = !game.pause;
                     currentScreen = game.pause ? PAUSE : GAME;
                 }
+
                 if (IsKeyPressed(KEY_DOWN)) selectedPause++;
                 if (IsKeyPressed(KEY_UP)) selectedPause--;
 
                 if (selectedPause < 0) selectedPause = pauseCount - 1;
                 if (selectedPause >= pauseCount) selectedPause = 0;
-            
+
+                if (IsKeyPressed(KEY_ENTER)) {
+                    switch (selectedPause) {
+                        case 0:  // Reanudar
+                            game.pause = false;
+                            currentScreen = GAME;
+
+                            break;
+                        case 1:  // Cambiar Dificultad
+                            game.Reset();
+                            currentScreen = OPTIONS;
+                            break;
+                        case 2:  // Finalizar juego
+                            CloseWindow();
+                            return 0;
+                    }
+                }
             } break;
         }
 
@@ -149,18 +168,26 @@ int main()
                 std::string scoreText = formatWithZeros(game.score, 5);
                 DrawTextEx(font, scoreText.c_str(), {50, 40}, 34, 2, yellow);
 
-                DrawTextEx(font, "HIGH SCORE", {570, 15}, 34, 2, yellow);
+                DrawTextEx(font, "HIGH SCORE", {520, 15}, 34, 2, yellow);
                 std::string highscoreText = formatWithZeros(game.highscore, 5);
-                DrawTextEx(font, highscoreText.c_str(), {655, 40}, 34, 2, yellow);
+                DrawTextEx(font, highscoreText.c_str(), {630, 40}, 34, 2, yellow);
             } break;
 
             case OPTIONS: {
-            DrawText("Seleccionar Dificultad", windowWidth / 2 - MeasureText("Seleccionar Dificultad", 40) / 2, 100, 40, WHITE);
-            for (int i = 0; i < difficultyCount; i++) {
-                Color color = (i == selectedDifficulty) ? RED : WHITE;
-                DrawText(difficultyOptions[i], windowWidth / 2 - MeasureText(difficultyOptions[i], 20) / 2, 300 + 40 * i, 20, color);
-            }
-        } break;
+                DrawText("Seleccionar Dificultad", windowWidth / 2 - MeasureText("Seleccionar Dificultad", 40) / 2, 100, 40, WHITE);
+                for (int i = 0; i < difficultyCount; i++) {
+                    Color color = (i == selectedDifficulty) ? RED : WHITE;
+                    DrawText(difficultyOptions[i], windowWidth / 2 - MeasureText(difficultyOptions[i], 20) / 2, 300 + 40 * i, 20, color);
+                }
+            } break;
+
+            case PAUSE: {
+                DrawText("PAUSE", windowWidth / 2 - MeasureText("PAUSE", 40) / 2, 100, 40, WHITE);
+                for (int i = 0; i < pauseCount; i++) {
+                    Color color = (i == selectedPause) ? RED : WHITE;
+                    DrawText(pauseOptions[i], windowWidth / 2 - MeasureText(pauseOptions[i], 20) / 2, 300 + 40 * i, 20, color);
+                }
+            } break;
         }
 
         EndDrawing();
@@ -171,6 +198,3 @@ int main()
 
     return 0;
 }
-
-
-
